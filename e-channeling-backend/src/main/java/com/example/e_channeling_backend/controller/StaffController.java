@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @RestController
@@ -76,9 +77,9 @@ public class StaffController {
 
 //    create a doctor
     @PostMapping("/create-doctor")
-    public ResponseEntity<?> createDoctor(@RequestBody Doctor doctor) {
+    public ResponseEntity<?> createDoctor(@RequestPart Doctor doctor,@RequestPart(required = false) MultipartFile profileImage) {
         try{
-            Doctor returnValue = staffService.createDoctor(doctor);
+            Doctor returnValue = staffService.createDoctor(doctor,profileImage);
             if(returnValue != null) {
                 return ResponseEntity
                         .status(HttpStatus.CREATED)

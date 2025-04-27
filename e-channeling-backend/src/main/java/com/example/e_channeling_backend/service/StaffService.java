@@ -12,8 +12,10 @@ import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.print.Doc;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +80,7 @@ public class StaffService {
     }
 
     @Transactional
-    public Doctor createDoctor(Doctor doctor) {
+    public Doctor createDoctor(Doctor doctor, MultipartFile image) throws IOException {
         UserProfile existUser = checkUserIsExist(doctor.getUserProfile().getProfileEmail());
         if (existUser != null) {
             throw new RuntimeException("User profile already exists");
@@ -92,6 +94,10 @@ public class StaffService {
         newUserProfile.setPassword(new BCryptPasswordEncoder().encode(requestUserProfile.getPassword()));
         newUserProfile.setPhone(requestUserProfile.getPhone());
         newUserProfile.setAddress(requestUserProfile.getAddress());
+        if(image != null){
+            newUserProfile.setImage(image.getBytes());
+        }
+
         newUserProfile.setRole(Role.DOCTOR);
 
         // Create the doctor
