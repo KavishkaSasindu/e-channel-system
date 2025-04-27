@@ -36,6 +36,7 @@ const DoctorQueue = () => {
       }
     };
     checkAuth();
+    window.addEventListener("storage", checkAuth);
 
     if (!selectedSchedule) return;
 

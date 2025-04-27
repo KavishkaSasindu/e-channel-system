@@ -1,11 +1,14 @@
 package com.example.e_channeling_backend.service;
 
+import com.example.e_channeling_backend.dto.DoctorProfileDto;
 import com.example.e_channeling_backend.model.Doctor;
 import com.example.e_channeling_backend.repo.DoctorRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PublicService {
@@ -27,7 +30,10 @@ public class PublicService {
     }
 
 //    get all doctors
-    public List<Doctor> getAllDoctors() {
-        return doctorRepository.findAll();
+    public List<DoctorProfileDto> getAllDoctors() {
+        return doctorRepository.findAll().stream()
+                .filter(Objects::nonNull)
+                .map(DoctorProfileDto::new)
+                .collect(Collectors.toList());
     }
 }

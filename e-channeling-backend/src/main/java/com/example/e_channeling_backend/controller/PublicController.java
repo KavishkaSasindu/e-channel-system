@@ -1,5 +1,6 @@
 package com.example.e_channeling_backend.controller;
 
+import com.example.e_channeling_backend.dto.DoctorProfileDto;
 import com.example.e_channeling_backend.model.Doctor;
 import com.example.e_channeling_backend.service.PublicService;
 import org.springframework.http.HttpStatus;
@@ -46,7 +47,7 @@ public class PublicController {
     @GetMapping("/all-doctors")
     public ResponseEntity<?> getAllDoctorProfiles() {
         try{
-            List<Doctor> allDoctors = publicService.getAllDoctors();
+            List<DoctorProfileDto> allDoctors = publicService.getAllDoctors();
             if(allDoctors.isEmpty()) {
                 return ResponseEntity
                         .status(HttpStatus.OK)
