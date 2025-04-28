@@ -46,9 +46,4 @@ public class Appointment {
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
     private QueueEntry queueEntry;
 
-    @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
-    @JoinColumn(
-            name = "prescription_id"
-    )
-    private Prescription prescription;
 }

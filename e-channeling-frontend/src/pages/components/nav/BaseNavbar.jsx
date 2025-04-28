@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -151,7 +151,6 @@ const GuestNav = () => {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Doctors", href: "/all-doctors" },
-    { name: "Contact", href: "/contact" },
     { name: "About Us", href: "/about" },
   ];
 
@@ -209,10 +208,11 @@ const PatientNav = () => {
   const { user } = useContext(AuthContext);
   const profileId = user?.profileId || null;
 
+  const navigate = useNavigate();
+
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Doctors", href: "/all-doctors" },
-    { name: "Contact", href: "/contact" },
     { name: "About Us", href: "/about" },
   ];
 
@@ -227,11 +227,11 @@ const PatientNav = () => {
 
     return (
       <div className="flex items-center space-x-3">
-        <button className="text-white rounded-full p-2 hover:bg-[#48A6A7] transition-colors relative">
-          <Bell size={18} />
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">
-            2
-          </span>
+        <button
+          onClick={() => navigate(`/patient/profile/${profileId}`)}
+          className="text-white rounded-full p-2 hover:bg-[#48A6A7] transition-colors relative"
+        >
+          Profile
         </button>
         <button
           onClick={logOut}
@@ -268,18 +268,13 @@ const PatientNav = () => {
               >
                 My Appointments
               </Link>
-              <a
+              <Link
+                to={`/patient/order/${profileId}`}
                 href="/pharmacy"
                 className="block py-1 text-[#9ACBD0] hover:text-white transition-colors"
               >
                 Online Pharmacy
-              </a>
-              <a
-                href="/records"
-                className="block py-1 text-[#9ACBD0] hover:text-white transition-colors"
-              >
-                Health Records
-              </a>
+              </Link>
             </div>
           )}
         </div>
@@ -309,18 +304,12 @@ const PatientNav = () => {
             >
               My Appointments
             </Link>
-            <a
-              href="/pharmacy"
+            <Link
+              to={`/patient/order/${profileId}`}
               className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
             >
               Online Pharmacy
-            </a>
-            <a
-              href="/records"
-              className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
-            >
-              Health Records
-            </a>
+            </Link>
           </div>
         )}
       </div>
@@ -345,9 +334,9 @@ const StaffNav = () => {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Doctors", href: "/all-doctors" },
-    { name: "Contact", href: "/contact" },
     { name: "About Us", href: "/about" },
     { name: "Dashboard", href: "/staff/dashboard" },
+    { name: "Orders", href: "/orders" },
   ];
 
   const StaffRightContent = ({ isMobile }) => {
@@ -395,12 +384,6 @@ const StaffNav = () => {
               >
                 {/* Note: Pills component was missing in imports */}
                 <FileText size={16} className="mr-2" /> Pharmacy
-              </a>
-              <a
-                href="/records"
-                className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors flex items-center"
-              >
-                <FileText size={16} className="mr-2" /> Records
               </a>
             </div>
           )}
@@ -486,12 +469,6 @@ const StaffNav = () => {
                   {/* Note: Pills component was missing in imports */}
                   <FileText size={14} className="mr-2" /> Pharmacy
                 </a>
-                <a
-                  href="/records"
-                  className="py-1 text-[#9ACBD0] hover:text-white transition-colors flex items-center"
-                >
-                  <FileText size={14} className="mr-2" /> Records
-                </a>
               </div>
             )}
           </div>
@@ -528,6 +505,12 @@ const StaffNav = () => {
             >
               Online Pharmacy
             </a>
+            <a
+              href="/pharmacy"
+              className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
+            >
+              Orders
+            </a>
           </div>
         )}
       </div>
@@ -557,7 +540,7 @@ const AdminNav = () => {
     { name: "Home", href: "/" },
     { name: "My Patients", href: "#" },
     { name: "Doctors", href: "/all-doctors" },
-    { name: "About", href: "#" },
+    { name: "About", href: "/about" },
   ];
 
   const AdminRightContent = ({ isMobile }) => {

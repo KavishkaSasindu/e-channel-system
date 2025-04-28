@@ -1,18 +1,25 @@
 package com.example.e_channeling_backend.service;
 
 import com.example.e_channeling_backend.dto.AppointmentDto;
+import com.example.e_channeling_backend.dto.PharmacyOrderDto;
+import com.example.e_channeling_backend.dto.UserProfileDto;
 import com.example.e_channeling_backend.model.*;
 import com.example.e_channeling_backend.model.enums.AppointmentStatus;
+import com.example.e_channeling_backend.model.enums.DeliveryStatus;
 import com.example.e_channeling_backend.model.enums.QueueStatus;
 import com.example.e_channeling_backend.repo.*;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,6 +27,8 @@ import java.util.stream.Collectors;
 @Data
 @Service
 public class UserService {
+    private final PrescriptionRepo prescriptionRepo;
+    private final PharmacyOrderRepo pharmacyOrderRepo;
     private UserProfileRepo userProfileRepo;
     private DoctorRepository doctorRepo;
     private DoctorScheduleRepo scheduleRepo;
@@ -33,13 +42,15 @@ public class UserService {
                        DoctorScheduleRepo scheduleRepo,
                        AppointmentRepo appointmentRepo,
                        QueueEntryRepo queueRepo,
-                       EmailService emailService) {
+                       EmailService emailService, PrescriptionRepo prescriptionRepo, PharmacyOrderRepo pharmacyOrderRepo) {
         this.userProfileRepo = userProfileRepo;
         this.doctorRepo = doctorRepo;
         this.scheduleRepo = scheduleRepo;
         this.appointmentRepo = appointmentRepo;
         this.queueRepo = queueRepo;
         this.emailService = emailService;
+        this.prescriptionRepo = prescriptionRepo;
+        this.pharmacyOrderRepo = pharmacyOrderRepo;
     }
 
 //    create an appointment
@@ -224,4 +235,86 @@ public class UserService {
         return queueDto;
     }
 
+//    get user profile
+    public UserProfileDto getUserProfile(Long profileId){
+        Optional<UserProfile> user = userProfileRepo.findById(profileId);
+        if(user.isEmpty()){
+            throw new RuntimeException("User profile not found with ID: " + profileId);
+        }
+        UserProfile userProfile = user.get();
+        return new UserProfileDto(
+                userProfile.getProfileId(),
+                userProfile.getProfileName(),
+                userProfile.getProfileEmail(),
+                userProfile.getPhone(),
+                userProfile.getAddress(),
+                userProfile.getRole(),
+                userProfile.getImage()
+        );
+    }
+
+//create pharmacy order
+@Transactional
+public PharmacyOrder createPharmacyOrder(Long profileId, PharmacyOrder pharmacyOrder, MultipartFile image) throws IOException {
+    // Validate user exists
+    UserProfile userProfile = userProfileRepo.findById(profileId)
+            .orElseThrow(() -> new RuntimeException("User profile not found with ID: " + profileId));
+
+    // Validate image
+    if (image == null || image.isEmpty()) {
+        throw new RuntimeException("Prescription image is required");
+    }
+
+    // Create prescription
+    Prescription prescription = new Prescription();
+    prescription.setPrescriptionTitle(pharmacyOrder.getPrescription().getPrescriptionTitle());
+    prescription.setPrescriptionImage(image.getBytes());
+
+    // Create order
+    PharmacyOrder order = new PharmacyOrder();
+    order.setPrescription(prescription);
+    order.setPatient(userProfile);
+    order.setStatus(DeliveryStatus.PENDING);
+
+    // Establish bidirectional relationship
+    prescription.setOrder(order);
+
+    // Save entities
+    prescription = prescriptionRepo.save(prescription);
+    order = pharmacyOrderRepo.save(order);
+
+    // Add to user's orders (if needed)
+    userProfile.getOrders().add(order);
+
+    return order; // Return the saved entity instead of input parameter
+}
+
+//get all orders by patient
+    public List<PharmacyOrderDto> getPharmacyOrderAll(Long profileId){
+        Optional<UserProfile> user = userProfileRepo.findById(profileId);
+        if(user.isEmpty()){
+            throw new RuntimeException("User profile not found with ID: " + profileId);
+        }
+        UserProfile userProfile = user.get();
+        return pharmacyOrderRepo.findByPatient_ProfileId(profileId).stream().map(
+                order -> new PharmacyOrderDto(
+                        order.getId(),
+                        order.getPrescription().getPrescriptionId(),
+                        order.getPatient().getProfileId(),
+                        order.getPatient().getProfileName(),
+                        order.getPrescription().getPrescriptionTitle(),
+                        order.getStatus(),
+                        order.getPrescription().getPrescriptionImage()
+                )
+        ).toList();
+    }
+
+//    get prescription image
+    public byte[] getPrescriptionImage(Long prescriptionId) {
+        Optional<Prescription> prescription = prescriptionRepo.findById(prescriptionId);
+        if(prescription.isEmpty()){
+            throw new RuntimeException("Prescription not found with ID: " + prescriptionId);
+        }
+        return prescription.get().getPrescriptionImage();
+    }
 }

@@ -27,17 +27,6 @@ public class Prescription {
     private String prescriptionTitle;
     private byte[] prescriptionImage;
 
-    @OneToOne(mappedBy = "prescription")
-    private Appointment appointment;
-
-    @ManyToOne
-    @JoinColumn(
-            name = "doctor_id"
-    )
-    private Doctor doctor;
-
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL)
-    private List<PrescriptionItem> items = new ArrayList<>();
 
     @OneToOne(mappedBy = "prescription", cascade = CascadeType.ALL)
     private PharmacyOrder order;

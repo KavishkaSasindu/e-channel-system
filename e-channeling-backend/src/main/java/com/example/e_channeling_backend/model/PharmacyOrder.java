@@ -30,11 +30,6 @@ public class PharmacyOrder {
     )
     private UserProfile patient;
 
-    @ManyToOne
-    @JoinColumn(
-            name = "staff_id"
-    )
-    private Staff approvedStaffMember;
 
     @Enumerated(EnumType.STRING)
     private DeliveryStatus status;

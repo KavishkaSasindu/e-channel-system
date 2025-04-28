@@ -45,8 +45,7 @@ public class Doctor {
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Appointment> appointments;
 
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
-    private List<Prescription> prescriptions = new ArrayList<>();
+
 
     public void addSchedule(DoctorSchedule schedule) {
         schedules.add(schedule);

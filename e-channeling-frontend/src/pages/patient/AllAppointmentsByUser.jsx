@@ -7,6 +7,7 @@ const AllAppointmentsByUser = () => {
   const navigate = useNavigate();
 
   const [appointments, setAppointments] = useState([]);
+  const [loading, setState] = useState(true);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -21,7 +22,7 @@ const AllAppointmentsByUser = () => {
 
     checkAuth();
     fetchAppointments();
-  }, []);
+  }, [navigate, id]);
 
   const fetchAppointments = async () => {
     try {
@@ -36,9 +37,11 @@ const AllAppointmentsByUser = () => {
 
       const data = response.data;
       setAppointments(data);
+      setState(false);
       console.log(data);
     } catch (error) {
       console.log(error);
+      setState(false);
     }
   };
 
@@ -54,9 +57,28 @@ const AllAppointmentsByUser = () => {
           My Appointments
         </h1>
 
-        <div className="grid gap-4">
-          {appointments &&
-            appointments.map((appointment) => (
+        {loading ? (
+          <div className="flex justify-center items-center py-10">
+            <div className="text-lg text-gray-600">Loading appointments...</div>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <div className="text-xl font-medium text-[#006A71] mb-3">
+              No Appointments Found
+            </div>
+            <p className="text-gray-600 mb-6">
+              You don't have any appointments scheduled at the moment.
+            </p>
+            <button
+              onClick={() => navigate("/all-doctors")}
+              className="bg-[#48A6A7] hover:bg-[#006A71] text-white px-6 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+            >
+              Book New Appointment
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {appointments.map((appointment) => (
               <div
                 key={appointment.appointmentId}
                 className="bg-white rounded-lg shadow p-4 border-l-4 border-[#48A6A7] hover:shadow-md transition-shadow"
@@ -92,14 +114,7 @@ const AllAppointmentsByUser = () => {
                 </div>
 
                 <div className="flex justify-end space-x-4 ">
-                  <div className="mt-4 flex justify-end ">
-                    <button
-                      onClick={() => handleReadMore(appointment.appointmentId)}
-                      className="bg-[#48A6A7] hover:bg-[#006A71] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                    >
-                      Read More
-                    </button>
-                  </div>
+                  <div className="mt-4 flex justify-end "></div>
                   <div className="mt-4 flex justify-end">
                     <button
                       onClick={() =>
@@ -115,7 +130,8 @@ const AllAppointmentsByUser = () => {
                 </div>
               </div>
             ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

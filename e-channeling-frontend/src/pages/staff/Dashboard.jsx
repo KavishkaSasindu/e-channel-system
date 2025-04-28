@@ -188,9 +188,9 @@ const Dashboard = () => {
                   className="flex transition-transform duration-300"
                   style={{ transform: `translateX(-${activeSlide * 100}%)` }}
                 >
-                  {doctors.length > 0 ? (
+                  {doctors?.length > 0 ? (
                     <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {doctors.map((doctor, index) => (
+                      {doctors?.map((doctor, index) => (
                         <div
                           key={index}
                           className="flex-none w-full md:w-auto transform transition-all hover:-translate-y-1 hover:shadow-xl"

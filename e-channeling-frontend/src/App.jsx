@@ -13,6 +13,10 @@ import AddDoctor from "./pages/staff/AddDoctor";
 import DoctorProfile from "./pages/doctor/DoctorProfile";
 import AllAppointmentsByUser from "./pages/patient/AllAppointmentsByUser";
 import LogInDoctor from "./pages/common/LogInDoctor";
+import AboutPage from "./pages/common/AboutPage";
+import Profile from "./pages/patient/Profile";
+import CreatePrescription from "./pages/patient/CreatePrescription";
+import Orders from "./pages/staff/Orders";
 
 const App = () => {
   return (
@@ -21,6 +25,7 @@ const App = () => {
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<AboutPage />} />
           {/* auth */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<LogIn />} />
@@ -41,10 +46,13 @@ const App = () => {
             path="/patient/appointments/:id"
             element={<AllAppointmentsByUser />}
           />
+          <Route path="patient/profile/:id" element={<Profile />} />
+          <Route path="patient/order/:id" element={<CreatePrescription />} />
 
           {/* staff routes */}
           <Route path="/staff/dashboard" element={<Dashboard />} />
           <Route path="/staff/dashboard/add-doctor" element={<AddDoctor />} />
+          <Route path="/orders" element={<Orders />} />
         </Routes>
       </BrowserRouter>
     </div>

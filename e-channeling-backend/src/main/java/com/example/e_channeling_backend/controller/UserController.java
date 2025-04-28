@@ -1,10 +1,9 @@
 package com.example.e_channeling_backend.controller;
 
-import com.example.e_channeling_backend.dto.AppointmentDto;
-import com.example.e_channeling_backend.dto.AppointmentQueueDto;
-import com.example.e_channeling_backend.dto.DoctorProfileDto;
+import com.example.e_channeling_backend.dto.*;
 import com.example.e_channeling_backend.model.Appointment;
 import com.example.e_channeling_backend.model.Doctor;
+import com.example.e_channeling_backend.model.PharmacyOrder;
 import com.example.e_channeling_backend.service.UserService;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -125,6 +125,95 @@ public class UserController {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("Error getting appointment");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    get user profile
+    @GetMapping("/profile/{profileId}")
+    public ResponseEntity<?> getUserProfile(@PathVariable Long profileId) {
+        try{
+            UserProfileDto returnValue = userService.getUserProfile(profileId);
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error getting user profile");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    create a pharmacy order
+    @PostMapping("/order/{profileId}")
+    public ResponseEntity<?> createOrder(@PathVariable Long profileId, @RequestPart MultipartFile file, @RequestPart PharmacyOrder pharmacyOrder) {
+        try{
+            PharmacyOrder order = userService.createPharmacyOrder(profileId,pharmacyOrder,file);
+            if(order != null) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(new PharmacyOrderDto(
+                                order.getId(),
+                                order.getPrescription().getPrescriptionId(),
+                                order.getPatient().getProfileId(),
+                                order.getPatient().getProfileName(),
+                                order.getPrescription().getPrescriptionTitle(),
+                                order.getStatus(),
+                                order.getPrescription().getPrescriptionImage()
+
+                        ));
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error creating order");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    get all order by id
+    @GetMapping("/all-orders/{profileId}")
+    public ResponseEntity<?> getAllOrder(@PathVariable Long profileId){
+        try{
+            List<PharmacyOrderDto> returnValue = userService.getPharmacyOrderAll(profileId);
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error getting all orders");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    get prescription image by id
+    @GetMapping("/order/prescription-image/{prescriptionId}")
+    public ResponseEntity<?> getPrescriptionImage(@PathVariable Long prescriptionId) {
+        try{
+            byte[] returnValue = userService.getPrescriptionImage(prescriptionId);
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error getting prescription image");
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

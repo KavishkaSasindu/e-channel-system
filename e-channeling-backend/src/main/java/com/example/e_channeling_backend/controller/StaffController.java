@@ -1,6 +1,8 @@
 package com.example.e_channeling_backend.controller;
 
+import com.example.e_channeling_backend.dto.PharmacyOrderDto;
 import com.example.e_channeling_backend.model.Doctor;
+import com.example.e_channeling_backend.model.PharmacyOrder;
 import com.example.e_channeling_backend.model.Staff;
 import com.example.e_channeling_backend.model.UserProfile;
 import com.example.e_channeling_backend.service.StaffService;
@@ -14,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Data
 @RestController
@@ -88,6 +92,106 @@ public class StaffController {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("Doctor could not be created");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    get Pending order
+    @GetMapping("/orders/pending")
+    public ResponseEntity<?> pendingOrder() {
+        try{
+            List<PharmacyOrderDto> returnValue = staffService.getPendingOrders();
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("No pending orders");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+    //    get Pending order
+    @GetMapping("/orders/rejected")
+    public ResponseEntity<?> rejectedOrder() {
+        try{
+            List<PharmacyOrderDto> returnValue = staffService.getRejectedOrders();
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("No rejected orders");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+    //    get Pending order
+    @GetMapping("/orders/delivered")
+    public ResponseEntity<?> deliveredOrder() {
+        try{
+            List<PharmacyOrderDto> returnValue = staffService.getDeliveredOrders();
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("No delivered orders");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    make order approved
+    @PostMapping("/order/approved/{orderId}")
+    public ResponseEntity<?> orderAccepted(@PathVariable Long orderId) {
+        try{
+            PharmacyOrderDto returnValue = staffService.approveOrder(orderId);
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("No order accepted");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+    //    make order approved
+    @PostMapping("/order/reject/{orderId}")
+    public ResponseEntity<?> rejectOrder(@PathVariable Long orderId) {
+        try{
+            PharmacyOrderDto returnValue = staffService.rejectedOrder(orderId);
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("No order rejected");
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -60,12 +60,15 @@ const DoctorQueue = () => {
     // Initial queue fetch
     const fetchQueue = () => {
       axios
-        .get(`http://localhost:8080/doctor/queue?scheduleId=10&status=QUEUED`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }) //http://localhost:8080/doctor/queue?scheduleId=${scheduleId}&status=QUEUED
+        .get(
+          `http://localhost:8080/doctor/queue?scheduleId=${selectedSchedule}&status=QUEUED`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        ) //http://localhost:8080/doctor/queue?scheduleId=${scheduleId}&status=QUEUED
         .then((res) => {
           setQueuedPatients(res.data);
           console.log(res.data);

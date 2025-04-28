@@ -31,6 +31,4 @@ public class Staff {
     )
     private UserProfile userProfile;
 
-    @OneToMany(mappedBy = "approvedStaffMember", cascade = CascadeType.ALL)
-    private List<PharmacyOrder> approvedOrders = new ArrayList<>();
 }
