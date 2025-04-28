@@ -19,6 +19,8 @@ import { AuthContext } from "../common/AuthProvider";
 const DoctorProfile = () => {
   const [doctor, setDoctor] = useState({});
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+  const [imageError, setImageError] = useState(false);
   const [notification, setNotification] = useState({
     show: false,
     success: false,
@@ -26,11 +28,9 @@ const DoctorProfile = () => {
   });
   const { id } = useParams();
   const navigate = useNavigate();
-  console.log(id);
 
   const { user } = useContext(AuthContext);
   const profileId = user?.profileId;
-  console.log("profile id" + profileId);
 
   const fetchDoctorProfile = async () => {
     try {
@@ -39,16 +39,55 @@ const DoctorProfile = () => {
       );
 
       const data = response.data;
-      console.log(data);
       setDoctor(data);
     } catch (error) {
-      console.log(error.message);
+      console.log("Error fetching doctor profile:", error.message);
+    }
+  };
+
+  const fetchProfileImage = async () => {
+    try {
+      setImageError(false);
+      const response = await axios.get(
+        `http://localhost:8080/public/get-profile-image/${
+          doctor.userProfile?.profileId || id
+        }`,
+        { responseType: "blob" }
+      );
+
+      if (response.data.size > 0) {
+        const imageUrl = URL.createObjectURL(response.data);
+        console.log("Image URL created:", imageUrl);
+        setImage(imageUrl);
+      } else {
+        console.log("Received empty image data");
+        setImageError(true);
+      }
+    } catch (error) {
+      console.log("Error fetching profile image:", error);
+      setImageError(true);
     }
   };
 
   useEffect(() => {
     fetchDoctorProfile();
-  }, []);
+  }, [id]);
+
+  // Separate useEffect for image fetching that depends on doctor data
+  useEffect(() => {
+    if (doctor && doctor.userProfile && doctor.userProfile.profileId) {
+      fetchProfileImage();
+    }
+  }, [doctor]);
+
+  // Cleanup function for blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (image && image.startsWith("blob:")) {
+        URL.revokeObjectURL(image);
+      }
+    };
+  }, [image]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -70,13 +109,11 @@ const DoctorProfile = () => {
   };
 
   const handleBooking = async (scheduleId, doctorId) => {
-    console.log(`Booking appointment for schedule ID: ${scheduleId}`);
-    console.log(doctorId + "doctorId");
     const token = localStorage.getItem("token");
 
     try {
       if (!token) {
-        alert("you need to sign in to create a appointment");
+        alert("You need to sign in to create an appointment");
         navigate("/login");
         return;
       }
@@ -94,8 +131,7 @@ const DoctorProfile = () => {
         }
       );
 
-      const data = await response.data;
-      console.log(data);
+      const data = response.data;
 
       // Show success notification
       setNotification({
@@ -116,7 +152,7 @@ const DoctorProfile = () => {
       // Refresh doctor profile to update available slots
       fetchDoctorProfile();
     } catch (error) {
-      console.log(error);
+      console.log("Booking error:", error);
       // Show error notification
       setNotification({
         show: true,
@@ -135,6 +171,11 @@ const DoctorProfile = () => {
     setNotification({ ...notification, show: false });
   };
 
+  const handleImageError = () => {
+    console.log("Image failed to load");
+    setImageError(true);
+  };
+
   return (
     <div className="min-h-screen bg-[#F2EFE7] py-8 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-5xl mx-auto pt-15">
@@ -148,16 +189,17 @@ const DoctorProfile = () => {
             {/* Profile Image and Basic Info */}
             <div className="flex flex-col md:flex-row">
               <div className="relative -mt-16 md:w-1/4 flex justify-center">
-                <div className="bg-[#9ACBD0] h-32 w-32 rounded-full border-4 border-white shadow-md flex items-center justify-center">
-                  {doctor.userProfile?.image ? (
+                <div className="bg-[#9ACBD0] h-32 w-32 rounded-full border-4 border-white shadow-md flex items-center justify-center overflow-hidden">
+                  {image && !imageError ? (
                     <img
-                      src={doctor.userProfile?.image}
-                      alt={doctor.userProfile?.profileName}
-                      className="h-full w-full rounded-full object-cover"
+                      src={image}
+                      alt={doctor.userProfile?.profileName || "Doctor profile"}
+                      className="h-full w-full object-cover"
+                      onError={handleImageError}
                     />
                   ) : (
                     <span className="text-4xl font-bold text-white">
-                      {doctor.userProfile?.profileName?.charAt(0)}
+                      {doctor.userProfile?.profileName?.charAt(0) || "D"}
                     </span>
                   )}
                 </div>
@@ -165,7 +207,7 @@ const DoctorProfile = () => {
 
               <div className="mt-6 md:mt-0 md:w-3/4 md:pl-6">
                 <h1 className="text-3xl font-bold text-[#006A71]">
-                  {doctor.userProfile?.profileName}
+                  Dr. {doctor.userProfile?.profileName}
                 </h1>
                 <div className="flex items-center mt-1 text-[#48A6A7]">
                   <Heart size={18} className="mr-1" />
@@ -228,51 +270,55 @@ const DoctorProfile = () => {
             Available Schedules
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {doctor.schedules?.map((schedule, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-md overflow-hidden border border-[#9ACBD0]"
-              >
-                <div className="bg-[#48A6A7] py-3 px-4">
-                  <div className="flex items-center text-white">
-                    <Calendar size={20} className="mr-2" />
-                    <span className="font-medium">
-                      {schedule.dayOfWeek}, {formatDate(schedule.date)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <div className="flex items-center text-gray-700 mb-3">
-                    <Clock size={18} className="mr-2 text-[#48A6A7]" />
-                    <span>
-                      {formatTime(schedule.startTime)} -{" "}
-                      {formatTime(schedule.endTime)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">{schedule.capacity}</span>{" "}
-                      slots available
+          {doctor.schedules && doctor.schedules.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {doctor.schedules.map((schedule, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow-md overflow-hidden border border-[#9ACBD0]"
+                >
+                  <div className="bg-[#48A6A7] py-3 px-4">
+                    <div className="flex items-center text-white">
+                      <Calendar size={20} className="mr-2" />
+                      <span className="font-medium">
+                        {schedule.dayOfWeek}, {formatDate(schedule.date)}
+                      </span>
                     </div>
-                    <button
-                      onClick={() =>
-                        handleBooking(schedule.scheduleId, doctor.doctorId)
-                      }
-                      disabled={loading}
-                      className="bg-[#006A71] hover:bg-[#004e52] transition-colors text-white py-2 px-4 rounded-md"
-                    >
-                      Book Now
-                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="flex items-center text-gray-700 mb-3">
+                      <Clock size={18} className="mr-2 text-[#48A6A7]" />
+                      <span>
+                        {formatTime(schedule.startTime)} -{" "}
+                        {formatTime(schedule.endTime)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">{schedule.capacity}</span>{" "}
+                        slots available
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleBooking(schedule.scheduleId, doctor.doctorId)
+                        }
+                        disabled={loading}
+                        className={`${
+                          loading
+                            ? "bg-gray-400"
+                            : "bg-[#006A71] hover:bg-[#004e52]"
+                        } transition-colors text-white py-2 px-4 rounded-md`}
+                      >
+                        {loading ? "Processing..." : "Book Now"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {doctor.schedules?.length === 0 && (
+              ))}
+            </div>
+          ) : (
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <p className="text-gray-600">
                 No schedules available at the moment.

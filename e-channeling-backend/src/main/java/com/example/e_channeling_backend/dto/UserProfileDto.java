@@ -11,6 +11,7 @@ public class UserProfileDto {
     private String phone;
     private String address;
     private String role;
+    private byte[] profileImage;
 
     public UserProfileDto(UserProfile profile) {
         this.profileId = profile.getProfileId();
@@ -19,5 +20,6 @@ public class UserProfileDto {
         this.phone = profile.getPhone();
         this.address = profile.getAddress();
         this.role = profile.getRole().name();
+        this.profileImage = profile.getImage();
     }
 }

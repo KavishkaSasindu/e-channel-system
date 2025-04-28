@@ -2,7 +2,9 @@ package com.example.e_channeling_backend.service;
 
 import com.example.e_channeling_backend.dto.DoctorProfileDto;
 import com.example.e_channeling_backend.model.Doctor;
+import com.example.e_channeling_backend.model.UserProfile;
 import com.example.e_channeling_backend.repo.DoctorRepository;
+import com.example.e_channeling_backend.repo.UserProfileRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,9 +16,11 @@ import java.util.stream.Collectors;
 public class PublicService {
 
     private final DoctorRepository doctorRepository;
+    private final UserProfileRepo userProfileRepo;
 
-    public PublicService(DoctorRepository doctorRepository) {
+    public PublicService(DoctorRepository doctorRepository, UserProfileRepo userProfileRepo) {
         this.doctorRepository = doctorRepository;
+        this.userProfileRepo = userProfileRepo;
     }
 
     public Doctor checkExistDoctor(Long doctorId) {
@@ -35,5 +39,11 @@ public class PublicService {
                 .filter(Objects::nonNull)
                 .map(DoctorProfileDto::new)
                 .collect(Collectors.toList());
+    }
+
+//    get doctor profile image
+    public byte[] getProfileImage(Long profileId) {
+        UserProfile user = userProfileRepo.findById(profileId).get();
+        return user.getImage();
     }
 }

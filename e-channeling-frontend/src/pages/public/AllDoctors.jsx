@@ -1,13 +1,16 @@
 import axios from "axios";
-import React, { useEffect } from "react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const AllDoctors = () => {
   const [doctors, setDoctors] = useState([]);
-  const [selectedSpecialization, setSelectedSpecialization] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [specializations, setSpecializations] = useState([]);
+
+  const navigate = useNavigate();
 
   const fetchDoctors = async () => {
     try {
@@ -15,15 +18,48 @@ const AllDoctors = () => {
       const response = await axios.get(
         "http://localhost:8080/public/all-doctors"
       );
-
       const data = response.data;
-      setDoctors(data);
-      if (data.length === 0) {
-        console.log("No doctors found.");
-      }
-      console.log(data);
+
+      // Extract unique specializations for filter dropdown
+      const uniqueSpecializations = [
+        ...new Set(
+          data.map((doctor) => doctor.specialization?.specializationName)
+        ),
+      ].filter(Boolean);
+
+      setSpecializations(uniqueSpecializations);
+
+      const imageResponse = await Promise.all(
+        data.map(async (doctor) => {
+          if (!doctor.userProfile?.profileImage) return doctor;
+
+          try {
+            const image = await axios.get(
+              `http://localhost:8080/public/get-profile-image/${doctor.userProfile.profileId}`,
+              { responseType: "blob" }
+            );
+            const imageUrl = URL.createObjectURL(image.data);
+            return {
+              ...doctor,
+              userProfile: {
+                ...doctor.userProfile,
+                profileImage: imageUrl,
+              },
+            };
+          } catch (imageError) {
+            console.error(
+              "Failed to fetch image for doctor:",
+              doctor.userProfile.profileId
+            );
+            return doctor;
+          }
+        })
+      );
+
+      setDoctors(imageResponse);
+      setFilteredDoctors(imageResponse);
     } catch (error) {
-      console.log(error.message);
+      console.error("Error fetching doctors:", error);
     } finally {
       setLoading(false);
     }
@@ -33,241 +69,239 @@ const AllDoctors = () => {
     fetchDoctors();
   }, []);
 
-  // Generate unique specializations list for filter
-  const specializations = [
-    "All",
-    ...new Set(
-      doctors.map(
-        (doctor) => doctor.specialization?.specializationName || "General"
-      )
-    ),
-  ];
+  useEffect(() => {
+    filterDoctors();
+  }, [searchTerm, specialization, doctors]);
 
-  // Filter doctors based on search term and specialization
-  const filteredDoctors = doctors.filter((doctor) => {
-    const nameMatch =
-      doctor.userProfile?.profileName
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) || false;
-    const specializationMatch =
-      selectedSpecialization === "All" ||
-      doctor.specialization?.specializationName === selectedSpecialization;
-    return nameMatch && specializationMatch;
-  });
+  const filterDoctors = () => {
+    let filtered = [...doctors];
 
-  // Generate avatar placeholder
-  const getInitials = (name) => {
-    if (!name) return "DR";
-    const names = name.split(" ");
-    if (names.length >= 2) {
-      return `${names[0].charAt(0)}${names[1].charAt(0)}`.toUpperCase();
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (doctor) =>
+          doctor.userProfile?.profileName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          doctor.qualification?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-    return name.substring(0, 2).toUpperCase();
+
+    if (specialization) {
+      filtered = filtered.filter(
+        (doctor) => doctor.specialization?.specializationName === specialization
+      );
+    }
+
+    setFilteredDoctors(filtered);
+  };
+
+  const truncateText = (text, maxLength = 100) => {
+    if (!text) return "";
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "";
+    // Converting 24-hour format to 12-hour with AM/PM
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSpecialization("");
+    setFilteredDoctors(doctors);
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-white">
-      <div className="max-w-7xl mx-auto pt-15">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2" style={{ color: "#006A71" }}>
-            All Doctors
-          </h1>
-          <div
-            className="w-24 h-1 mx-auto rounded-full"
-            style={{ backgroundColor: "#9ACBD0" }}
-          ></div>
-          <p className="mt-4 text-lg" style={{ color: "#48A6A7" }}>
-            Find the right healthcare professional for your needs
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#F2EFE7] p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-[#006A71] mb-8 text-center">
+          Our Specialists
+        </h1>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <div className="w-full md:w-1/2 relative">
-            <input
-              type="text"
-              placeholder="Search doctors by name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-opacity-50"
-              style={{
-                borderColor: "#9ACBD0",
-                boxShadow: "0 0 0 3px rgba(72, 166, 167, 0.1)",
-              }}
-            />
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="#48A6A7"
+        {/* Filter Section */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label
+                htmlFor="search"
+                className="block text-sm font-medium text-[#006A71] mb-1"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+                Search
+              </label>
+              <input
+                type="text"
+                id="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name or qualification"
+                className="w-full p-2 border border-[#9ACBD0] rounded-md focus:outline-none focus:ring focus:border-[#48A6A7]"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="specialization"
+                className="block text-sm font-medium text-[#006A71] mb-1"
+              >
+                Specialization
+              </label>
+              <select
+                id="specialization"
+                value={specialization}
+                onChange={(e) => setSpecialization(e.target.value)}
+                className="w-full p-2 border border-[#9ACBD0] rounded-md focus:outline-none focus:ring focus:border-[#48A6A7]"
+              >
+                <option value="">All Specializations</option>
+                {specializations.map((spec, index) => (
+                  <option key={index} value={spec}>
+                    {spec}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={handleResetFilters}
+                className="w-full p-2 bg-[#48A6A7] text-white rounded-md hover:bg-[#006A71] transition-colors duration-300"
+              >
+                Reset Filters
+              </button>
             </div>
           </div>
-
-          <div className="w-full md:w-auto">
-            <select
-              value={selectedSpecialization}
-              onChange={(e) => setSelectedSpecialization(e.target.value)}
-              className="w-full md:w-auto pl-4 pr-10 py-3 rounded-lg border appearance-none focus:outline-none focus:ring-2 focus:ring-opacity-50"
-              style={{
-                borderColor: "#9ACBD0",
-                boxShadow: "0 0 0 3px rgba(72, 166, 167, 0.1)",
-                color: "#006A71",
-              }}
-            >
-              {specializations.map((spec) => (
-                <option key={spec} value={spec}>
-                  {spec}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
-        {/* Doctor Cards */}
-        <div className="mt-15">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-[#48A6A7] text-xl">Loading doctors...</div>
+          </div>
+        ) : filteredDoctors.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-xl text-[#006A71]">
+              No doctors match your search criteria.
+            </p>
+            <button
+              onClick={handleResetFilters}
+              className="mt-4 px-6 py-2 bg-[#48A6A7] text-white rounded-md hover:bg-[#006A71] transition-colors duration-300"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredDoctors.map((doctor, idx) => (
               <div
-                className="w-16 h-16 border-4 border-t-4 rounded-full animate-spin"
-                style={{ borderColor: "#9ACBD0", borderTopColor: "#006A71" }}
-              ></div>
-            </div>
-          ) : filteredDoctors.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredDoctors.map((doctor, index) => (
-                <Link to={`/doctor/${doctor.doctorId}`} key={index}>
-                  <div
-                    key={index}
-                    className="bg-white rounded-2xl overflow-hidden shadow-lg transform transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-                  >
-                    {/* Card Header */}
-                    <div
-                      className="relative h-28"
-                      style={{ backgroundColor: "#48A6A7" }}
-                    >
-                      <div className="absolute -bottom-10 left-6">
-                        <div
-                          className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center text-xl font-bold text-white"
-                          style={{ backgroundColor: "#006A71" }}
-                        >
-                          {getInitials(doctor.userProfile?.profileName)}
-                        </div>
-                      </div>
-                      <div
-                        className="absolute top-4 right-4 px-3 py-1 rounded-full text-sm font-medium"
-                        style={{
-                          backgroundColor: doctor.available
-                            ? "#9ACBD0"
-                            : "#F2EFE7",
-                          color: "#006A71",
-                        }}
-                      >
-                        {doctor.available ? "Available" : "Unavailable"}
-                      </div>
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="pt-12 pb-6 px-6">
-                      <h3
-                        className="text-xl font-bold mb-1"
-                        style={{ color: "#006A71" }}
-                      >
-                        {doctor.userProfile?.profileName || "Doctor Name"}
-                      </h3>
-
-                      <div className="flex items-center mb-4">
-                        <span
-                          className="inline-block px-3 py-1 rounded-full text-xs font-medium mr-2"
-                          style={{
-                            backgroundColor: "#F2EFE7",
-                            color: "#48A6A7",
-                          }}
-                        >
-                          {doctor.specialization?.specializationName ||
-                            "General"}
-                        </span>
-                        <span className="text-sm" style={{ color: "#006A71" }}>
-                          {doctor.qualification || "Medical Professional"}
-                        </span>
-                      </div>
-
-                      <p
-                        className="text-sm mb-6 line-clamp-2"
-                        style={{ color: "#48A6A7" }}
-                      >
-                        {doctor.specialization?.specializationDescription ||
-                          "Experienced healthcare professional dedicated to patient care and wellness."}
-                      </p>
-
-                      <div
-                        className="flex items-center justify-between border-t pt-4"
-                        style={{ borderColor: "#F2EFE7" }}
-                      >
-                        <div>
-                          <span
-                            className="block text-xs"
-                            style={{ color: "#48A6A7" }}
-                          >
-                            Consultation Fee
-                          </span>
-                          <span
-                            className="text-lg font-bold"
-                            style={{ color: "#006A71" }}
-                          >
-                            Rs{doctor.consultationFee || "N/A"}
-                          </span>
-                        </div>
-
-                        <button
-                          className="px-4 py-2 rounded-lg text-white font-medium transition-all duration-300 hover:shadow-md"
-                          style={{ backgroundColor: "#006A71" }}
-                        >
-                          Book Now
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div
-              className="bg-white rounded-lg shadow-md p-12 text-center"
-              style={{ color: "#006A71" }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-16 w-16 mx-auto mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="#9ACBD0"
+                key={idx}
+                className="bg-white rounded-lg shadow-lg overflow-hidden border border-[#9ACBD0] hover:shadow-xl transition-shadow duration-300"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 12H4M8 16l-4-4 4-4M16 16l4-4-4-4"
-                />
-              </svg>
-              <h3 className="text-xl font-bold mb-2">No Doctors found</h3>
-              <p className="text-md" style={{ color: "#48A6A7" }}>
-                We couldn't find any doctors matching your criteria. Please try
-                adjusting your search.
-              </p>
-            </div>
-          )}
-        </div>
+                <div className="bg-[#48A6A7] p-4 flex items-center justify-center">
+                  {doctor.userProfile?.profileImage ? (
+                    <img
+                      src={doctor.userProfile.profileImage}
+                      alt={doctor.userProfile?.profileName}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-[#F2EFE7]"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-[#9ACBD0] flex items-center justify-center border-4 border-[#F2EFE7]">
+                      <span className="text-3xl font-bold text-white">
+                        {doctor.userProfile?.profileName?.charAt(0) || "D"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <h2 className="text-xl font-bold text-[#006A71] mb-2">
+                    Dr. {doctor.userProfile?.profileName}
+                  </h2>
+
+                  <div className="flex items-center text-sm text-[#48A6A7] mb-4">
+                    <span className="font-semibold">
+                      {doctor.qualification}
+                    </span>
+                    <span className="mx-2">•</span>
+                    <span>{doctor.specialization?.specializationName}</span>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-4 h-12 overflow-hidden">
+                    {truncateText(
+                      doctor.specialization?.specializationDescription,
+                      75
+                    )}
+                  </p>
+
+                  <div className="bg-[#F2EFE7] p-3 rounded-lg mb-4">
+                    <p className="text-sm font-medium text-[#006A71]">
+                      Consultation Fee
+                    </p>
+                    <p className="text-lg font-bold text-[#006A71]">
+                      Rs. {doctor.consultationFee.toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-[#006A71] mb-2">
+                      Upcoming Schedules:
+                    </p>
+                    {doctor.schedules && doctor.schedules.length > 0 ? (
+                      <ul className="space-y-2">
+                        {doctor.schedules.slice(0, 1).map((schedule, idx) => (
+                          <li
+                            key={idx}
+                            className="text-sm bg-[#9ACBD0] bg-opacity-20 p-2 rounded"
+                          >
+                            <span className="font-medium">
+                              {formatDate(schedule.date)}
+                            </span>
+                            <div className="text-xs text-gray-600">
+                              {formatTime(schedule.startTime)} -{" "}
+                              {formatTime(schedule.endTime)}
+                            </div>
+                          </li>
+                        ))}
+                        {doctor.schedules.length > 2 && (
+                          <li className="text-xs text-[#006A71] font-medium text-center italic">
+                            +{doctor.schedules.length - 2} more schedule
+                            {doctor.schedules.length - 2 > 1 ? "s" : ""}
+                          </li>
+                        )}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic bg-[#9ACBD0] bg-opacity-10 p-2 rounded text-center">
+                        No upcoming schedules available <br />
+                        Wait for the doctor to add schedules
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => navigate(`/doctor/${doctor.doctorId}`)}
+                    className="w-full py-2 bottom-0 bg-[#006A71] text-white rounded-md hover:bg-[#48A6A7] transition-colors duration-300 font-medium mt-2"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

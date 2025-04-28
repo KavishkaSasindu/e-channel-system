@@ -62,4 +62,24 @@ public class PublicController {
                     .body(e.getMessage());
         }
     }
+
+//    get profile image by doctor id
+    @GetMapping("/get-profile-image/{profileId}")
+    public ResponseEntity<?> getProfileImage(@PathVariable Long profileId) {
+        try {
+            byte[] profileImage = publicService.getProfileImage(profileId);
+            if(profileImage == null) {
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body("Profile image not found");
+            }
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(profileImage);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
 }

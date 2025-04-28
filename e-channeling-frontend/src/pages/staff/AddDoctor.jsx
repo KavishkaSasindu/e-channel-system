@@ -34,6 +34,12 @@ const AddDoctor = () => {
   });
 
   const [currentSchedule, setCurrentSchedule] = useState(initialSchedule);
+  const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [responseMessage, setResponseMessage] = useState({
+    text: "",
+    type: "",
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,34 +81,128 @@ const AddDoctor = () => {
         schedules: [...prev.schedules, currentSchedule],
       }));
       setCurrentSchedule(initialSchedule);
+      setResponseMessage({
+        text: "Schedule added successfully!",
+        type: "success",
+      });
+
+      // Clear the message after 3 seconds
+      setTimeout(() => {
+        setResponseMessage({ text: "", type: "" });
+      }, 3000);
+    } else {
+      setResponseMessage({
+        text: "Please fill all schedule fields",
+        type: "error",
+      });
+
+      // Clear the message after 3 seconds
+      setTimeout(() => {
+        setResponseMessage({ text: "", type: "" });
+      }, 3000);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setResponseMessage({
+          text: "Image size should be less than 2MB",
+          type: "error",
+        });
+
+        // Clear the message after 3 seconds
+        setTimeout(() => {
+          setResponseMessage({ text: "", type: "" });
+        }, 3000);
+        return;
+      }
+
+      setProfileImage(file);
+      // Create preview URL for the image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      setResponseMessage({
+        text: "Image uploaded successfully!",
+        type: "success",
+      });
+
+      // Clear the message after 3 seconds
+      setTimeout(() => {
+        setResponseMessage({ text: "", type: "" });
+      }, 3000);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Basic validation
+    if (
+      !doctor.userProfile.profileName ||
+      !doctor.userProfile.profileEmail ||
+      !doctor.userProfile.password
+    ) {
+      setResponseMessage({
+        text: "Please fill in all required fields",
+        type: "error",
+      });
+      return;
+    }
+
     try {
+      setResponseMessage({
+        text: "Processing submission...",
+        type: "info",
+      });
+
       console.log(doctor);
+      const formData = new FormData();
+      formData.append(
+        "doctor",
+        new Blob([JSON.stringify(doctor)], { type: "application/json" })
+      );
+      if (profileImage) {
+        formData.append("profileImage", profileImage);
+      }
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:8080/staff/create-doctor",
-        doctor,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            "Content-Type": "multipart/form-data",
           },
         }
       );
       const data = response.data;
       console.log(response);
       if (response.status === 201) {
-        alert("Doctor added successfully!");
-        navigate("/staff/dashboard");
+        setResponseMessage({
+          text: "Doctor added successfully!",
+          type: "success",
+        });
+        setTimeout(() => {
+          navigate("/staff/dashboard");
+        }, 2000);
       } else {
-        alert("Failed to add doctor. Please try again.");
+        setResponseMessage({
+          text: "Failed to add doctor. Please try again.",
+          type: "error",
+        });
       }
     } catch (error) {
       console.log(error.message);
+      setResponseMessage({
+        text: error.message || "An error occurred. Please try again.",
+        type: "error",
+      });
     }
   };
 
@@ -127,9 +227,24 @@ const AddDoctor = () => {
 
   return (
     <div
-      className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 "
+      className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 relative"
       style={{ backgroundColor: "#F2EFE7" }}
     >
+      {/* Response Message Box */}
+      {responseMessage.text && (
+        <div
+          className={`fixed top-10 left-1/2 transform -translate-x-1/2 z-50 py-3 px-6 rounded-lg shadow-lg text-white font-medium transition-all duration-300 ${
+            responseMessage.type === "success"
+              ? "bg-green-500"
+              : responseMessage.type === "error"
+              ? "bg-red-500"
+              : "bg-blue-500"
+          }`}
+        >
+          {responseMessage.text}
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden mt-10">
         <div
           className="py-6 px-8 text-white"
@@ -153,12 +268,75 @@ const AddDoctor = () => {
                   Professional Details
                 </h2>
 
+                {/* Enhanced Image Upload Section */}
+                <div className="mb-6">
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: "#006A71" }}
+                  >
+                    Profile Image
+                  </label>
+                  <div className="flex flex-col items-center">
+                    {imagePreview ? (
+                      <div className="mb-4 relative">
+                        <img
+                          src={imagePreview}
+                          alt="Profile Preview"
+                          className="h-40 w-40 object-cover rounded-full border-4"
+                          style={{ borderColor: "#48A6A7" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileImage(null);
+                            setImagePreview(null);
+                            setResponseMessage({
+                              text: "Image removed",
+                              type: "info",
+                            });
+                            setTimeout(() => {
+                              setResponseMessage({ text: "", type: "" });
+                            }, 3000);
+                          }}
+                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="h-40 w-40 mb-4 flex items-center justify-center bg-gray-100 rounded-full border-4"
+                        style={{ borderColor: "#48A6A7" }}
+                      >
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                    <div className="w-full">
+                      <label
+                        htmlFor="profile-upload"
+                        className="cursor-pointer py-2 px-4 w-full text-center block rounded-lg text-white transition duration-300"
+                        style={{ backgroundColor: "#48A6A7" }}
+                      >
+                        {imagePreview ? "Change Image" : "Upload Image"}
+                      </label>
+                      <input
+                        id="profile-upload"
+                        type="file"
+                        name="profileImage"
+                        onChange={handleImageChange}
+                        className="hidden"
+                        accept="image/*"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="mb-4">
                   <label
                     className="block text-sm font-medium mb-1"
                     style={{ color: "#006A71" }}
                   >
-                    Consultation Fee (₹)
+                    Consultation Fee (Rs)
                   </label>
                   <input
                     type="number"
@@ -252,7 +430,7 @@ const AddDoctor = () => {
                     className="block text-sm font-medium mb-1"
                     style={{ color: "#006A71" }}
                   >
-                    Full Name
+                    Full Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -261,6 +439,7 @@ const AddDoctor = () => {
                     onChange={handleUserProfileChange}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                     style={{ boxShadow: "0 0 0 3px rgba(72, 166, 167, 0.2)" }}
+                    required
                   />
                 </div>
 
@@ -269,7 +448,7 @@ const AddDoctor = () => {
                     className="block text-sm font-medium mb-1"
                     style={{ color: "#006A71" }}
                   >
-                    Email
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -278,6 +457,7 @@ const AddDoctor = () => {
                     onChange={handleUserProfileChange}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                     style={{ boxShadow: "0 0 0 3px rgba(72, 166, 167, 0.2)" }}
+                    required
                   />
                 </div>
 
@@ -286,7 +466,7 @@ const AddDoctor = () => {
                     className="block text-sm font-medium mb-1"
                     style={{ color: "#006A71" }}
                   >
-                    Password
+                    Password <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="password"
@@ -295,6 +475,7 @@ const AddDoctor = () => {
                     onChange={handleUserProfileChange}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                     style={{ boxShadow: "0 0 0 3px rgba(72, 166, 167, 0.2)" }}
+                    required
                   />
                 </div>
 
@@ -381,7 +562,7 @@ const AddDoctor = () => {
                       className="block text-sm font-medium mb-1"
                       style={{ color: "#006A71" }}
                     >
-                      Date
+                      Date <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -399,7 +580,7 @@ const AddDoctor = () => {
                         className="block text-sm font-medium mb-1"
                         style={{ color: "#006A71" }}
                       >
-                        Start Time
+                        Start Time <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="time"
@@ -418,7 +599,7 @@ const AddDoctor = () => {
                         className="block text-sm font-medium mb-1"
                         style={{ color: "#006A71" }}
                       >
-                        End Time
+                        End Time <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="time"

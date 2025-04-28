@@ -36,6 +36,7 @@ public class UserProfile implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     private byte[] image;
 
     @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)

@@ -26,7 +26,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SecurityConfig {
 
     private final MyUserDetails myUserDetails;
-    private JwtFilter jwtFilter;
+    private final JwtFilter jwtFilter;
 
     @Autowired
     public SecurityConfig(MyUserDetails myUserDetails,JwtFilter jwtFilter) {

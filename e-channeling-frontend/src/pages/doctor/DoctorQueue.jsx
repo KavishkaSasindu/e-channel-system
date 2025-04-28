@@ -60,7 +60,7 @@ const DoctorQueue = () => {
     // Initial queue fetch
     const fetchQueue = () => {
       axios
-        .get(`http://localhost:8080/doctor/queue?scheduleId=2&status=QUEUED`, {
+        .get(`http://localhost:8080/doctor/queue?scheduleId=10&status=QUEUED`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
