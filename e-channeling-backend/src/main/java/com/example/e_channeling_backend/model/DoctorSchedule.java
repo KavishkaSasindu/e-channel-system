@@ -24,7 +24,8 @@ import java.util.List;
 public class DoctorSchedule {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "schedule_seq")
+    @SequenceGenerator(name = "schedule_seq", sequenceName = "schedule_sequence", allocationSize = 1)
     private Long scheduleId;
     private DayOfWeek dayOfWeek;
     private LocalDate date;

@@ -1,10 +1,14 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
   const [doctors, setDoctors] = useState([]);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   const fetchAllDoctors = async () => {
@@ -14,8 +18,29 @@ const Dashboard = () => {
       );
 
       const data = response.data;
+
+      const doctorsWithImage = await Promise.all(
+        data.map(async (doctor) => {
+          const image = await axios.get(
+            `http://localhost:8080/public/get-profile-image/${doctor.userProfile?.profileId}`,
+            { responseType: "blob" }
+          );
+
+          const imageUrl = URL.createObjectURL(image.data);
+          return {
+            ...doctor,
+            userProfile: {
+              ...doctor.userProfile,
+              profileImage: imageUrl,
+            },
+          };
+        })
+      );
+
       setDoctors(data);
+      setFilteredDoctors(doctorsWithImage);
       console.log(data);
+      console.log(doctorsWithImage);
     } catch (error) {
       console.group(error.message);
     }
@@ -35,17 +60,70 @@ const Dashboard = () => {
     window.addEventListener("storage", checkAuth);
   }, []);
 
-  const nextSlide = () => {
-    setActiveSlide((prev) =>
-      prev === Math.ceil(doctors.length / 3) - 1 ? 0 : prev + 1
-    );
+  const deleteDoctor = async (doctorId) => {
+    try {
+      toast.success(
+        "Deleting a doctor may take some time.\nWe are notifying all users who use our service.\nPlease wait it will reload the page after delete",
+        {
+          position: "bottom-right",
+          autoClose: 8000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        }
+      );
+      const response = await axios.delete(
+        `http://localhost:8080/staff/delete/doctor/${doctorId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success(
+          "Deleted successfully and informed all users who use our service.",
+          {
+            position: "bottom-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          }
+        );
+        setTimeout(() => {
+          location.reload();
+          fetchAllDoctors();
+        }, 3000);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
   };
 
-  const prevSlide = () => {
-    setActiveSlide((prev) =>
-      prev === 0 ? Math.ceil(doctors.length / 3) - 1 : prev - 1
-    );
-  };
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredDoctors(doctors);
+    } else {
+      const filtered = doctors.filter(
+        (doctor) =>
+          doctor.userProfile?.profileName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          doctor.specialization?.specializationName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          doctor.qualification?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredDoctors(filtered);
+    }
+  }, [searchTerm, doctors]);
 
   // Generate placeholder avatar based on name
   const getInitials = (name) => {
@@ -72,22 +150,6 @@ const Dashboard = () => {
             >
               Dashboard
             </h1>
-            <div className="flex space-x-4">
-              <button
-                className="px-4 py-2 rounded-lg text-white transition-all hover:shadow-lg"
-                style={{ backgroundColor: "#48A6A7" }}
-                onClick={() => navigate("/staff/profile")}
-              >
-                My Profile
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg text-white transition-all hover:shadow-lg"
-                style={{ backgroundColor: "#006A71" }}
-                onClick={() => navigate("/staff/settings")}
-              >
-                Settings
-              </button>
-            </div>
           </div>
 
           {/* Welcome Section */}
@@ -106,12 +168,6 @@ const Dashboard = () => {
           {/* Doctors List Section */}
           <div className="mb-10">
             <div className="flex justify-between items-center mb-6">
-              <h2
-                className="text-2xl font-semibold"
-                style={{ color: "#006A71" }}
-              >
-                Doctors List
-              </h2>
               <Link to="/staff/dashboard/add-doctor">
                 <button
                   className="flex items-center px-4 py-2 rounded-lg text-white transition-all hover:shadow-lg"
@@ -133,194 +189,210 @@ const Dashboard = () => {
                 </button>
               </Link>
             </div>
+          </div>
 
-            {/* Doctors Carousel */}
-            <div className="relative">
-              {/* Carousel Navigation */}
-              {doctors.length > 3 && (
-                <>
-                  <button
-                    onClick={prevSlide}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-10 w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
-                    style={{ color: "#006A71" }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={nextSlide}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-10 w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
-                    style={{ color: "#006A71" }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </>
-              )}
+          {/* Doctors Table Section */}
+          <div className="mb-10">
+            <div className="flex justify-between items-center mb-6">
+              <h2
+                className="text-2xl font-semibold"
+                style={{ color: "#006A71" }}
+              >
+                Doctors Table
+              </h2>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search doctors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                  style={{
+                    borderColor: "#9ACBD0",
+                    color: "#006A71",
+                    width: "250px",
+                  }}
+                />
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2"
+                  style={{ color: "#48A6A7" }}
+                />
+              </div>
+            </div>
 
-              {/* Carousel Content */}
-              <div className="overflow-hidden">
-                <div
-                  className="flex transition-transform duration-300"
-                  style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-                >
-                  {doctors?.length > 0 ? (
-                    <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {doctors?.map((doctor, index) => (
-                        <div
-                          key={index}
-                          className="flex-none w-full md:w-auto transform transition-all hover:-translate-y-1 hover:shadow-xl"
+            <div
+              className="border rounded-lg overflow-hidden"
+              style={{ borderColor: "#9ACBD0" }}
+            >
+              <div className="overflow-x-auto">
+                <div style={{ height: "400px", overflowY: "auto" }}>
+                  <table
+                    className="min-w-full divide-y"
+                    style={{ borderColor: "#9ACBD0" }}
+                  >
+                    <thead
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        backgroundColor: "#9ACBD0",
+                      }}
+                    >
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          style={{ color: "#006A71" }}
                         >
-                          <div
-                            className="bg-white rounded-xl overflow-hidden shadow-md border"
-                            style={{ borderColor: "#9ACBD0" }}
-                          >
-                            {/* Doctor Avatar */}
-                            <div
-                              className="h-32 flex items-center justify-center"
-                              style={{ backgroundColor: "#48A6A7" }}
-                            >
-                              <div
-                                className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold text-white"
-                                style={{ backgroundColor: "#006A71" }}
-                              >
-                                {getInitials(doctor.userProfile?.profileName)}
+                          Name
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          style={{ color: "#006A71" }}
+                        >
+                          Specialization
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          style={{ color: "#006A71" }}
+                        >
+                          Qualification
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          style={{ color: "#006A71" }}
+                        >
+                          Fee
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          style={{ color: "#006A71" }}
+                        >
+                          Status
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider"
+                          style={{ color: "#006A71" }}
+                        >
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredDoctors.length > 0 ? (
+                        filteredDoctors.map((doctor, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div
+                                  className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center"
+                                  style={{
+                                    backgroundColor: "#006A71",
+                                    color: "white",
+                                  }}
+                                >
+                                  {getInitials(doctor.userProfile?.profileName)}
+                                </div>
+                                <div className="ml-4">
+                                  <div
+                                    className="text-sm font-medium"
+                                    style={{ color: "#006A71" }}
+                                  >
+                                    {doctor.userProfile?.profileName ||
+                                      "Doctor Name"}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-
-                            {/* Doctor Info */}
-                            <div className="p-4">
-                              <h3
-                                className="text-lg font-semibold mb-1"
-                                style={{ color: "#006A71" }}
-                              >
-                                {doctor.userProfile?.profileName ||
-                                  "Doctor Name"}
-                              </h3>
-                              <p
-                                className="text-sm mb-2"
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div
+                                className="text-sm"
                                 style={{ color: "#48A6A7" }}
                               >
                                 {doctor.specialization?.specializationName ||
                                   "Specialization"}
-                              </p>
-                              <p
-                                className="text-xs mb-3"
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div
+                                className="text-sm"
                                 style={{ color: "#006A71" }}
                               >
                                 {doctor.qualification || "Qualification"}
-                              </p>
-
-                              <div className="flex justify-between items-center">
-                                <span
-                                  className="text-sm font-medium"
-                                  style={{ color: "#006A71" }}
-                                >
-                                  ₹{doctor.consultationFee || "N/A"}
-                                </span>
-                                <span
-                                  className="px-2 py-1 rounded-full text-xs"
-                                  style={{
-                                    backgroundColor: doctor.available
-                                      ? "#9ACBD0"
-                                      : "#F2EFE7",
-                                    color: "#006A71",
-                                  }}
-                                >
-                                  {doctor.available
-                                    ? "Available"
-                                    : "Unavailable"}
-                                </span>
                               </div>
-
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <div
-                                className="mt-4 pt-4 border-t flex justify-between"
-                                style={{ borderColor: "#F2EFE7" }}
+                                className="text-sm font-medium"
+                                style={{ color: "#006A71" }}
                               >
-                                <button
-                                  className="px-3 py-1 rounded text-sm"
-                                  style={{
-                                    backgroundColor: "#F2EFE7",
-                                    color: "#006A71",
-                                  }}
-                                  onClick={() =>
-                                    navigate(`/staff/doctor/${doctor.id}`)
-                                  }
-                                >
-                                  View Profile
-                                </button>
-                                <button
-                                  className="px-3 py-1 rounded text-sm text-white"
-                                  style={{ backgroundColor: "#48A6A7" }}
-                                  onClick={() =>
-                                    navigate(`/staff/edit-doctor/${doctor.id}`)
-                                  }
-                                >
-                                  Edit
-                                </button>
+                                Rs:{doctor.consultationFee || "N/A"}
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div
-                      className="w-full text-center py-12"
-                      style={{ color: "#006A71" }}
-                    >
-                      <p className="text-lg">
-                        No doctors found. Add your first doctor to get started.
-                      </p>
-                    </div>
-                  )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className="px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full"
+                                style={{
+                                  backgroundColor: doctor.available
+                                    ? "#9ACBD0"
+                                    : "#F2EFE7",
+                                  color: "#006A71",
+                                }}
+                              >
+                                {doctor.available ? "Available" : "Unavailable"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                              <button
+                                className="text-white px-3 py-1 rounded mr-2"
+                                style={{ backgroundColor: "#48A6A7" }}
+                                onClick={() =>
+                                  navigate(`/doctor/${doctor.doctorId}`)
+                                }
+                              >
+                                View
+                              </button>
+                              <button
+                                className="text-white px-3 py-1 rounded"
+                                style={{ backgroundColor: "#006A71" }}
+                                onClick={() =>
+                                  navigate(
+                                    `/staff/update-doctor/${doctor.doctorId}/${doctor.userProfile?.profileId}`
+                                  )
+                                }
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="text-white px-3 py-1 rounded"
+                                style={{ backgroundColor: "#A74848" }}
+                                onClick={() => deleteDoctor(doctor.doctorId)}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="6"
+                            className="px-6 py-4 text-center"
+                            style={{ color: "#006A71" }}
+                          >
+                            No doctors found matching your search criteria
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-
-              {/* Carousel Indicators */}
-              {doctors.length > 3 && (
-                <div className="flex justify-center mt-6 space-x-2">
-                  {Array.from({ length: Math.ceil(doctors.length / 3) }).map(
-                    (_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setActiveSlide(index)}
-                        className={`w-2 h-2 rounded-full transition-all ${
-                          activeSlide === index ? "w-6" : ""
-                        }`}
-                        style={{
-                          backgroundColor:
-                            activeSlide === index ? "#006A71" : "#9ACBD0",
-                        }}
-                      />
-                    )
-                  )}
-                </div>
-              )}
             </div>
           </div>
 

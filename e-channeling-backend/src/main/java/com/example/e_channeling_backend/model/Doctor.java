@@ -29,7 +29,7 @@ public class Doctor {
     @OneToOne(mappedBy = "doctor")
     private UserProfile userProfile;
 
-    private double consultationFee;
+    private Double consultationFee;
     private String qualification;
 
     @ManyToOne(cascade = CascadeType.ALL)
@@ -39,7 +39,7 @@ public class Doctor {
     private Specialization specialization;
 
     private boolean available;
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL,fetch = FetchType.LAZY,orphanRemoval = true)
     private List<DoctorSchedule> schedules = new ArrayList<>();
 
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)

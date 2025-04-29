@@ -52,7 +52,7 @@ const BaseNavbar = ({ children, navLinks, rightSideContent }) => {
                 <div className="h-8 w-8 bg-[#9ACBD0] rounded-lg flex items-center justify-center">
                   <PlusCircle size={18} className="text-[#006A71]" />
                 </div>
-                <div className="text-xl font-bold text-white">MediConnect</div>
+                <div className="text-xl font-bold text-white">MediQ</div>
               </div>
             </Link>
 
@@ -330,6 +330,9 @@ const PatientNav = () => {
 const StaffNav = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isStaffMenuOpen, setIsStaffMenuOpen] = useState(false);
+  const { user } = useContext(AuthContext);
+  const profileId = user?.profileId || null;
+  const navigate = useNavigate();
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -350,44 +353,12 @@ const StaffNav = () => {
 
     return (
       <div className="flex items-center space-x-3">
-        <div className="relative">
-          <button
-            className="text-white py-2 px-4 flex items-center hover:text-[#9ACBD0]"
-            onClick={() => setIsStaffMenuOpen(!isStaffMenuOpen)}
-          >
-            Staff Menu{" "}
-            <ChevronDown
-              size={16}
-              className={`ml-1 transition-transform duration-300 ${
-                isStaffMenuOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {isStaffMenuOpen && (
-            <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-              <a
-                href="/appointments"
-                className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors flex items-center"
-              >
-                <Calendar size={16} className="mr-2" /> Appointments
-              </a>
-              <a
-                href="/patients"
-                className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors flex items-center"
-              >
-                <Clipboard size={16} className="mr-2" /> Patients
-              </a>
-              <a
-                href="/pharmacy"
-                className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors flex items-center"
-              >
-                {/* Note: Pills component was missing in imports */}
-                <FileText size={16} className="mr-2" /> Pharmacy
-              </a>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => navigate(`/patient/profile/${profileId}`)}
+          className=" text-white py-2 px-5 rounded-full hover:bg-[#F2EFE7] hover:text-[#006A71] transition-colors transform hover:scale-105 duration-200 flex items-center"
+        >
+          Profile
+        </button>
         <button
           onClick={logOut}
           className="bg-white text-[#006A71] py-2 px-5 rounded-full hover:bg-[#F2EFE7] transition-colors transform hover:scale-105 duration-200 flex items-center"
@@ -418,59 +389,30 @@ const StaffNav = () => {
 
             {isDropdownOpen && (
               <div className="mt-2 pl-4 space-y-2 border-l-2 border-[#48A6A7]">
-                <a
+                <Link
+                  to={`/patient/appointments/${profileId}`}
                   href="/appointments"
                   className="block py-1 text-[#9ACBD0] hover:text-white transition-colors"
                 >
                   My Appointments
-                </a>
-                <a
-                  href="/pharmacy"
+                </Link>
+                <Link
+                  to={"/orders"}
                   className="block py-1 text-[#9ACBD0] hover:text-white transition-colors"
                 >
                   Online Pharmacy
-                </a>
+                </Link>
               </div>
             )}
           </div>
 
           <div className="py-2">
             <button
+              onClick={() => navigate(`/patient/profile/${profileId}`)}
               className="text-white hover:text-[#9ACBD0] flex items-center justify-between w-full"
-              onClick={() => setIsStaffMenuOpen(!isStaffMenuOpen)}
             >
-              <span>Staff Menu</span>
-              <ChevronDown
-                size={16}
-                className={`transition-transform duration-300 ${
-                  isStaffMenuOpen ? "rotate-180" : ""
-                }`}
-              />
+              <span>Profile</span>
             </button>
-
-            {isStaffMenuOpen && (
-              <div className="mt-2 pl-4 space-y-2 border-l-2 border-[#48A6A7]">
-                <a
-                  href="/appointments"
-                  className="py-1 text-[#9ACBD0] hover:text-white transition-colors flex items-center"
-                >
-                  <Calendar size={14} className="mr-2" /> Appointments
-                </a>
-                <a
-                  href="/patients"
-                  className="py-1 text-[#9ACBD0] hover:text-white transition-colors flex items-center"
-                >
-                  <Clipboard size={14} className="mr-2" /> Patients
-                </a>
-                <a
-                  href="/pharmacy"
-                  className="py-1 text-[#9ACBD0] hover:text-white transition-colors flex items-center"
-                >
-                  {/* Note: Pills component was missing in imports */}
-                  <FileText size={14} className="mr-2" /> Pharmacy
-                </a>
-              </div>
-            )}
           </div>
         </>
       );
@@ -493,24 +435,24 @@ const StaffNav = () => {
 
         {isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-            <a
-              href="/appointments"
+            <Link
+              to={`/patient/appointments/${profileId}`}
               className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
             >
               My Appointments
-            </a>
-            <a
-              href="/pharmacy"
+            </Link>
+            <Link
+              to={`/patient/order/${profileId}`}
               className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
             >
               Online Pharmacy
-            </a>
-            <a
-              href="/pharmacy"
+            </Link>
+            <Link
+              to={"/orders"}
               className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
             >
               Orders
-            </a>
+            </Link>
           </div>
         )}
       </div>
@@ -538,7 +480,6 @@ const AdminNav = () => {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "My Patients", href: "#" },
     { name: "Doctors", href: "/all-doctors" },
     { name: "About", href: "/about" },
   ];
@@ -588,12 +529,13 @@ const AdminNav = () => {
 
             {isDropdownOpen && (
               <div className="mt-2 pl-4 space-y-2 border-l-2 border-[#48A6A7]">
-                <a
+                <Link
+                  to={`/doctor/schedules/${doctorId}`}
                   href="/statistics"
                   className="block py-1 text-[#9ACBD0] hover:text-white transition-colors"
                 >
                   My Schedules
-                </a>
+                </Link>
                 <Link
                   to={`/doctor/queue/${doctorId}`}
                   href="/monitoring"
@@ -625,12 +567,13 @@ const AdminNav = () => {
 
         {isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-            <a
+            <Link
+              to={`/doctor/schedules/${doctorId}`}
               href="/statistics"
               className="block px-4 py-2 text-[#006A71] hover:bg-[#F2EFE7] transition-colors"
             >
               My Schedules
-            </a>
+            </Link>
             <Link
               to={`/doctor/queue/${doctorId}`}
               href="/monitoring"

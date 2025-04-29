@@ -1,6 +1,8 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 const LogIn = () => {
   const [logInRequestDto, setLogInRequestDto] = useState({
@@ -31,10 +33,20 @@ const LogIn = () => {
       if (response.status === 200) {
         localStorage.setItem("token", response.data.token);
         window.dispatchEvent(new Event("storage"));
+        toast.success("Log In Successfully", {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
         navigate("/");
       }
     } catch (error) {
-      console.log(error.response.data);
+      console.log(error);
     }
   };
 
@@ -92,6 +104,18 @@ const LogIn = () => {
                 Log In
               </button>
             </form>
+            <div className="space-x-5 mt-3">
+              <Link to={"/login-staff"}>
+                <button className="bg-green-200 text-[#006A71] p-2 px-4 rounded-sm">
+                  Log In as a Staff Member
+                </button>
+              </Link>
+              <Link to={"/login-doctor"}>
+                <button className="bg-green-200 text-[#006A71] p-2 px-8 rounded-sm">
+                  Log In as a Doctor
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

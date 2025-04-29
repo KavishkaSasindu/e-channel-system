@@ -15,4 +15,5 @@ public interface QueueEntryRepository extends JpaRepository<QueueEntry, Long> {
     Optional<QueueEntry> findFirstByScheduleAndStatusOrderByQueueNumberAsc(DoctorSchedule schedule, QueueStatus status);
 
     Optional<QueueEntry> findByAppointment_AppointmentId(Long appointmentId);
+    QueueEntry findByAppointmentAppointmentId(Long appointmentId);
 }

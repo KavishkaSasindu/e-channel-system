@@ -9,4 +9,5 @@ import java.util.List;
 public interface PharmacyOrderRepo extends JpaRepository<PharmacyOrder, Long> {
     List<PharmacyOrder> findByPatient_ProfileId(Long profileId);
     List<PharmacyOrder> findByStatus(DeliveryStatus status);
+    List<PharmacyOrder> findByPrescriptionPrescriptionId(Long prescriptionId);
 }

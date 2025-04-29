@@ -1,6 +1,8 @@
 package com.example.e_channeling_backend.controller;
 
+import com.example.e_channeling_backend.dto.AppointmentDto;
 import com.example.e_channeling_backend.dto.QueueEntryResponseDTO;
+import com.example.e_channeling_backend.dto.ScheduleDto;
 import com.example.e_channeling_backend.model.Appointment;
 import com.example.e_channeling_backend.model.DoctorSchedule;
 import com.example.e_channeling_backend.model.QueueEntry;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @RestController
@@ -109,6 +112,48 @@ public class DoctorController {
             return ResponseEntity.ok(entry);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+//    Get doctor bys schedules
+    @GetMapping("/get-schedules/{doctorId}")
+    public ResponseEntity<?> getSchedulesDoctorSchedules(@PathVariable Long doctorId) {
+        try{
+            List<DoctorSchedule> returnValue = doctorScheduleService.getSchedulesByDoctorId(doctorId);
+            if(returnValue.isEmpty()){
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body("No Schedules Found");
+            }
+
+            List<ScheduleDto> schedules = returnValue.stream().map(ScheduleDto::new).toList();
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(schedules);
+        }catch(Exception e){
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    get appointments by schedule id
+    @GetMapping("/appointmentsBy-schedules/{doctorId}/{scheduleId}")
+    public ResponseEntity<?> getAppointmentsByScheduleId(@PathVariable Long doctorId , @PathVariable Long scheduleId) {
+        try{
+            List<AppointmentDto> returnValue = doctorService.getAllAppointmentsByDoctorId(doctorId,scheduleId);
+            if(returnValue.isEmpty()){
+                return ResponseEntity
+                        .status(HttpStatus.OK)
+                        .body("No Appointments found to this schedule ");
+            }
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(returnValue);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
         }
     }
 

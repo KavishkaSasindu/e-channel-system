@@ -9,8 +9,47 @@ const Profile = () => {
   const [image, setImage] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [appointments, setAppointments] = useState([]);
+  const [orders, setOrders] = useState([]);
 
   const token = localStorage.getItem("token");
+
+  const fetchAllOrders = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/patient/all-orders/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = response.data;
+
+      const presImage = await Promise.all(
+        data.map(async (order) => {
+          const image = await axios.get(
+            `http://localhost:8080/patient/order/prescription-image/${order.prescriptionId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              responseType: "blob",
+            }
+          );
+          const imageUrl = URL.createObjectURL(image.data);
+          return {
+            ...order,
+            prescriptionImage: imageUrl,
+          };
+        })
+      );
+
+      setOrders(presImage);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const fetchYserProfileData = async () => {
     try {
@@ -75,6 +114,7 @@ const Profile = () => {
 
     fetchYserProfileData();
     fetchAppointments();
+    fetchAllOrders();
 
     return () => {
       if (image) {
@@ -500,12 +540,54 @@ const Profile = () => {
       case "prescriptions":
         return (
           <div className="mt-6 bg-white rounded-2xl p-6 shadow-md">
-            <h3 className="text-xl font-semibold text-[#006A71] border-b border-[#9ACBD0] pb-2 mb-4">
-              Prescriptions
-            </h3>
-            <p className="text-gray-500 text-center py-12">
-              Prescriptions will be displayed here
-            </p>
+            {orders.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold text-[#006A71] border-b border-[#9ACBD0] pb-2 mb-4">
+                  No Orders Yet
+                </h3>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {orders.map((order) => (
+                  <div
+                    key={order.prescriptionId}
+                    className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-[#48A6A7] transition-transform duration-300 hover:translate-y-[-5px]"
+                  >
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-[#006A71] mb-2">
+                        {order.prescriptionTitle}
+                      </h3>
+
+                      <div className="relative aspect-square overflow-hidden mb-3 bg-[#F2EFE7] rounded-md">
+                        <img
+                          src={order.prescriptionImage}
+                          alt="Prescription"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium 
+                        ${
+                          order.orderStatus === "PENDING"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : order.orderStatus === "DELIVERED"
+                            ? "bg-green-100 text-green-800"
+                            : order.orderStatus === "REJECTED"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                        >
+                          {order.orderStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       default:
@@ -659,7 +741,7 @@ const Profile = () => {
                 : "hover:bg-[#F2EFE7] text-gray-600"
             }`}
           >
-            Prescriptions
+            Prescriptions Orders
           </button>
         </div>
 

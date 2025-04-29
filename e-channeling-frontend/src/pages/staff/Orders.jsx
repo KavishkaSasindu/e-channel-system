@@ -133,50 +133,6 @@ const Orders = () => {
     }, 3000);
   };
 
-  const approveOrder = async (orderId) => {
-    try {
-      const response = await axios.post(
-        `http://localhost:8080/staff/order/approved/${orderId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (response.status === 200) {
-        showNotification("Order approved successfully", "success");
-        fetchPendingOrders();
-        fetchDeliveredOrders();
-      }
-    } catch (error) {
-      console.log(error);
-      showNotification("Failed to approve order", "error");
-    }
-  };
-
-  const rejectOrder = async (orderId) => {
-    try {
-      const response = await axios.post(
-        `http://localhost:8080/staff/order/reject/${orderId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (response.status === 200) {
-        showNotification("Order rejected successfully", "success");
-        fetchPendingOrders();
-        fetchRejectedOrders();
-      }
-    } catch (error) {
-      console.log(error);
-      showNotification("Failed to reject order", "error");
-    }
-  };
-
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem("token");
@@ -204,7 +160,7 @@ const Orders = () => {
         <div
           className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-50 transition-all duration-300 ${
             notification.type === "success"
-              ? "bg-[#48A6A7] text-white"
+              ? "bg-[#0cbe30] text-white"
               : "bg-red-500 text-white"
           }`}
         >
@@ -326,22 +282,22 @@ const Orders = () => {
                             </span>
                             <span className="ml-1">{order.patientId}</span>
                           </div>
+                          <div className="text-sm text-gray-600">
+                            <span className="font-medium text-[#48A6A7]">
+                              Patient Name:
+                            </span>
+                            <span className="ml-1">{order.patientName}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       <button
-                        onClick={() => rejectOrder(order.orderId)}
-                        className="py-2 bg-white border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors duration-200"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => approveOrder(order.orderId)}
+                        onClick={() => navigate(`/order/read/${order.orderId}`)}
                         className="py-2 bg-[#48A6A7] text-white rounded-lg hover:bg-[#006A71] transition-colors duration-200"
                       >
-                        Approve
+                        View Order
                       </button>
                     </div>
                   </div>
@@ -418,8 +374,22 @@ const Orders = () => {
                           </span>
                           <span className="ml-1">{order.patientId}</span>
                         </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium text-[#48A6A7]">
+                            Patient Name:
+                          </span>
+                          <span className="ml-1">{order.patientName}</span>
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => navigate(`/order/view/${order.orderId}`)}
+                      className="py-2 bg-[#48A6A7] text-white rounded-lg hover:bg-[#006A71] transition-colors duration-200 mb-5 ml-5"
+                    >
+                      View Order
+                    </button>
                   </div>
                 </div>
               ))
@@ -494,8 +464,22 @@ const Orders = () => {
                           </span>
                           <span className="ml-1">{order.patientId}</span>
                         </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium text-[#48A6A7]">
+                            Patient Name:
+                          </span>
+                          <span className="ml-1">{order.patientName}</span>
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => navigate(`/order/view/${order.orderId}`)}
+                      className="py-2 bg-[#48A6A7] text-white rounded-lg hover:bg-[#006A71] transition-colors duration-200 mb-5 ml-5"
+                    >
+                      View Order
+                    </button>
                   </div>
                 </div>
               ))

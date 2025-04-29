@@ -17,6 +17,10 @@ import AboutPage from "./pages/common/AboutPage";
 import Profile from "./pages/patient/Profile";
 import CreatePrescription from "./pages/patient/CreatePrescription";
 import Orders from "./pages/staff/Orders";
+import MySchedules from "./pages/doctor/MySchedules";
+import OrderRead from "./pages/staff/OrderRead";
+import ViewOrder from "./pages/staff/ViewOrder";
+import UpdateDoctor from "./pages/staff/UpdateDoctor";
 
 const App = () => {
   return (
@@ -24,22 +28,25 @@ const App = () => {
       <BrowserRouter>
         <Navbar />
         <Routes>
+          {/* public routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/all-doctors" element={<AllDoctors />} />
           <Route path="/about" element={<AboutPage />} />
+
           {/* auth */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<LogIn />} />
           <Route path="/login-staff" element={<LogInStaff />} />
           <Route path="/login-doctor" element={<LogInDoctor />} />
 
-          {/* public routes */}
-          <Route path="/all-doctors" element={<AllDoctors />} />
+          {/* doctor routes */}
           <Route path="/doctor/queue/:doctorId" element={<DoctorQueue />} />
           <Route
             path="/patient/appointment/queue/:patientId/:appointmentId/:doctorId"
             element={<PatientQueue />}
           />
           <Route path="/doctor/:id" element={<DoctorProfile />} />
+          <Route path="/doctor/schedules/:id" element={<MySchedules />} />
 
           {/* patient */}
           <Route
@@ -53,6 +60,12 @@ const App = () => {
           <Route path="/staff/dashboard" element={<Dashboard />} />
           <Route path="/staff/dashboard/add-doctor" element={<AddDoctor />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/order/read/:id" element={<OrderRead />} />
+          <Route path="/order/view/:id" element={<ViewOrder />} />
+          <Route
+            path="/staff/update-doctor/:id/:profileId"
+            element={<UpdateDoctor />}
+          />
         </Routes>
       </BrowserRouter>
     </div>

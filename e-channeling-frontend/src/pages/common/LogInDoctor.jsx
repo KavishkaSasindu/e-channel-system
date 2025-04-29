@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const LogInDoctor = () => {
   const [logInRequestDto, setLogInRequestDto] = useState({
@@ -31,6 +32,16 @@ const LogInDoctor = () => {
       if (response.status === 200) {
         localStorage.setItem("token", response.data.token);
         window.dispatchEvent(new Event("storage"));
+        toast.success("Log In Successfully", {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
         navigate("/");
       }
     } catch (error) {

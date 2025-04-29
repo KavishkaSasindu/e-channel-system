@@ -6,6 +6,7 @@ import com.example.e_channeling_backend.model.PharmacyOrder;
 import com.example.e_channeling_backend.model.Staff;
 import com.example.e_channeling_backend.model.UserProfile;
 import com.example.e_channeling_backend.service.StaffService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -192,6 +193,66 @@ public class StaffController {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body("No order rejected");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(e.getMessage());
+        }
+    }
+
+//    get pharmacy order by id
+@GetMapping("/order/{orderId}")
+public ResponseEntity<?> getOrderById(@PathVariable Long orderId) {
+    try{
+        PharmacyOrderDto returnValue = staffService.getOrderById(orderId);
+        if(returnValue != null) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(returnValue);
+        }
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body("No order rejected");
+    } catch (Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(e.getMessage());
+    }
+}
+
+//test doctor profile
+    @GetMapping("/test-get-doctor/{doctorId}")
+    public ResponseEntity<?> getDoctorTest(@PathVariable Long doctorId) {
+        Doctor doctor = staffService.testDoctorProfile(doctorId);
+        return ResponseEntity.status(HttpStatus.OK).body(doctor);
+    }
+
+//    delete doctor
+@DeleteMapping("/delete/doctor/{doctorId}")
+public ResponseEntity<Void> deleteDoctor(@PathVariable Long doctorId) {
+    try {
+        staffService.deleteDoctorAndRelatedEntities(doctorId);
+        return ResponseEntity.status(HttpStatus.OK).build();
+
+    } catch (EntityNotFoundException e) {
+        return ResponseEntity.notFound().build();
+    } catch (Exception e) {
+        return ResponseEntity.internalServerError().build();
+    }
+}
+
+    @PutMapping("/update-doctor/{doctorId}")
+    public ResponseEntity<?> updateDoctor(@PathVariable Long doctorId ,@RequestPart Doctor doctor,@RequestPart(required = false) MultipartFile profileImage) {
+        try{
+            Doctor returnValue = staffService.updateDoctor(doctorId,doctor,profileImage);
+            if(returnValue != null) {
+                return ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(returnValue);
+            }
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Doctor could not be created");
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
